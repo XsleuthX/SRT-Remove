@@ -70,20 +70,21 @@
     }
 
     textarea {
-      flex: 1;
-      width: 100%;
-      resize: vertical;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #1f2937;
-      background: #020617;
-      color: #e5e7eb;
-      font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
-        "Courier New", monospace;
-      font-size: 0.82rem;
-      line-height: 1.4;
-      outline: none;
-    }
+  flex: 1;
+  width: 100%;
+  resize: both;              /* enable both directions */
+  max-width: 100%;           /* keep it within the panel width */
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  color: #e5e7eb;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  outline: none;
+}
 
     textarea:focus {
       border-color: #3b82f6;
