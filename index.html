@@ -70,22 +70,21 @@
     }
 
     textarea {
-  /* remove: flex: 1; */
-  width: 100%;
-  resize: vertical;              /* already added */
-  max-width: 100%;
-  height: 260px;             /* initial height, fully resizable */
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #1f2937;
-  background: #020617;
-  color: #e5e7eb;
-  font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  outline: none;
-}
+      width: 100%;
+      resize: both;          /* resizable both ways */
+      max-width: 100%;       /* don't overflow panel horizontally */
+      height: 260px;         /* initial size, user can drag */
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #e5e7eb;
+      font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      outline: none;
+    }
 
     textarea:focus {
       border-color: #3b82f6;
@@ -97,6 +96,7 @@
       flex-wrap: wrap;
       gap: 8px;
       margin: 10px 0;
+      align-items: center;
     }
 
     button {
@@ -159,6 +159,29 @@
       border: 1px solid #1f2937;
     }
 
+    .badge input[type="file"] {
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin-left: 4px;
+    }
+
+    .toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #e5e7eb;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+    }
+
+    .toggle-label input {
+      accent-color: #3b82f6;
+    }
+
     .chip {
       font-size: 0.7rem;
       background: #111827;
@@ -194,10 +217,18 @@
     <button id="copyBtn" class="secondary" disabled>
       📋 Copy output
     </button>
+
     <label class="badge">
       📁 Load .srt
       <input type="file" id="fileInput" accept=".srt,text/plain" />
     </label>
+
+    <!-- NEW: Merge to paragraph toggle -->
+    <label class="toggle-label">
+      <input type="checkbox" id="mergeToggle" />
+      Merge into paragraphs
+    </label>
+
     <span class="status" id="statusText"></span>
   </div>
 
@@ -223,7 +254,8 @@
         <div>
           <div class="panel-title">Clean Transcript</div>
           <div class="panel-subtitle">
-            Timecodes &amp; indices removed, content preserved
+            Timecodes &amp; indices removed,
+            <span id="modeHint">line breaks preserved</span>
           </div>
         </div>
       </div>
@@ -237,9 +269,8 @@
 
   <div class="footer">
     • Removes lines like <code>1</code> and
-    <code>00:00:01,000 --&gt; 00:00:04,000</code>  
-    • Keeps original wording, punctuation, and line breaks between dialogue
-    blocks.
+    <code>00:00:01,000 --&gt; 00:00:04,000</code><br />
+    • Optionally merge into paragraphs: blank lines become paragraph breaks, lines within each block are joined with spaces.
   </div>
 
   <script>
@@ -294,25 +325,58 @@
       return collapsed.join("\n").trim();
     }
 
+    // NEW: remove blank lines, keep one line under one line
+function mergeIntoParagraphs(text) {
+  if (!text) return "";
+
+  const lines = text.split(/\r?\n/);
+
+  // Drop empty lines, keep everything else as separate lines
+  const kept = lines
+    .map((l) => l.trim())     // optional: trim spaces around each line
+    .filter((l) => l.length); // remove blanks
+
+  return kept.join("\n");      // keep line-by-line structure
+}
+
+
+
     const inputEl = document.getElementById("inputSrt");
     const outputEl = document.getElementById("outputText");
     const convertBtn = document.getElementById("convertBtn");
     const copyBtn = document.getElementById("copyBtn");
     const fileInput = document.getElementById("fileInput");
     const statusText = document.getElementById("statusText");
+    const mergeToggle = document.getElementById("mergeToggle");
+    const modeHint = document.getElementById("modeHint");
 
     function setStatus(message) {
       statusText.textContent = message || "";
     }
 
+    // Update the hint text when toggle changes
+    mergeToggle.addEventListener("change", () => {
+      modeHint.textContent = mergeToggle.checked
+        ? "merged into paragraphs"
+        : "line breaks preserved";
+    });
+
     convertBtn.addEventListener("click", () => {
       const input = inputEl.value;
-      const result = stripSrtTimecodes(input);
+      let result = stripSrtTimecodes(input);
+
+      if (mergeToggle.checked) {
+        result = mergeIntoParagraphs(result);
+      }
+
       outputEl.value = result;
       copyBtn.disabled = !result;
+
       setStatus(
         result
-          ? "✅ Timecodes removed. Output is ready."
+          ? mergeToggle.checked
+            ? "✅ Timecodes removed and merged into paragraphs."
+            : "✅ Timecodes removed. Line breaks preserved."
           : "Nothing to convert. Paste SRT content first."
       );
     });
